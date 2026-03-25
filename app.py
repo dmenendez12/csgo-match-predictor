@@ -151,8 +151,8 @@ def predict_map(team1, team2, selected_map):
     proba = model.predict_proba(X_input)[0]
 
     return {
-        "team1_prob": float(proba[1]),
-        "team2_prob": float(proba[0])
+        "team1_prob": float(proba[0]),
+        "team2_prob": float(proba[1])
     }
 
 
