@@ -217,7 +217,7 @@ if st.button("🎯 Ejecutar simulación"):
             "Ganador": df["winner"]
         })
 
-        # 🎨 COLORES INTELIGENTES
+        # COLORES 
         def style_probs(val):
             if isinstance(val, float):
                 if val > 0.5:
@@ -241,7 +241,7 @@ if st.button("🎯 Ejecutar simulación"):
         st.divider()
 
         # -----------------------
-        # RESULTADO FINAL PRO
+        # RESULTADO FINAL
         # -----------------------
         st.subheader("Resultado del enfrentamiento")
 
