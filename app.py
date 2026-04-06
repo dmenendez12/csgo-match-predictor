@@ -232,7 +232,7 @@ if st.button("🎯 Ejecutar simulación"):
             return ["background-color: #f1f1f1"] * len(col)
 
         styled = df_pretty.style \
-            .applymap(style_probs, subset=[team1, team2]) \
+            .map(style_probs, subset=[team1, team2]) \
             .apply(style_static, subset=["Mapa", "Ganador"]) \
             .format({team1: "{:.1%}", team2: "{:.1%}"})
 
