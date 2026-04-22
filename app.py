@@ -11,8 +11,8 @@ st.set_page_config(page_title="Simulador CS:GO", layout="wide")
 # -------------------------------
 # HEADER
 # -------------------------------
-st.markdown("## 🎮 Simulador de enfrentamientos CS:GO")
-st.caption("Predicción de resultados basada en Machine Learning")
+st.markdown("## 🎮 Simulador de enfrentamientos de CS:GO")
+st.markdown("""Simula partidos entre equipos profesionales de Counter-Strike y descubre quién tiene más probabilidades de ganar. Selecciona dos equipos, elige los mapas y el formato del enfrentamiento, y el sistema calculará automáticamente el resultado esperado. """)
 
 st.divider()
 
@@ -90,10 +90,10 @@ maps_list = sorted(data["_map"].unique())
 col1, col2 = st.columns(2)
 
 with col1:
-    team1 = st.selectbox("Equipo 1", teams, key="team1")
+    team1 = st.selectbox("Selecciona el primer equipo", teams, key="team1")
 
 with col2:
-    team2 = st.selectbox("Equipo 2", teams, key="team2")
+    team2 = st.selectbox("Selecciona el segundo equipo", teams, key="team2")
 
 if team1 == team2:
     st.error("Selecciona equipos diferentes")
@@ -101,24 +101,33 @@ if team1 == team2:
 
 st.divider()
 
-format_option = st.selectbox("Formato", ["BO1", "BO3", "BO5"], key="format")
+format_option = st.selectbox(
+    "Formato del enfrentamiento (número de mapas que se juegan)",
+    ["BO1", "BO3", "BO5"],
+    key="format",
+    help="BO1: se juega 1 mapa | BO3: gana el mejor de 3 mapas | BO5: gana el mejor de 5 mapas"
+)
+
 num_maps = {"BO1": 1, "BO3": 3, "BO5": 5}[format_option]
 
 selected_maps = st.multiselect(
-    f"Selecciona {num_maps} mapas",
+    f"Selecciona exactamente {num_maps} mapas en los que se jugará el enfrentamiento",
     maps_list,
     key="maps",
     max_selections=num_maps
 )
 
+st.caption("Cada mapa representa una partida independiente dentro del enfrentamiento.")
+
 if selected_maps:
-    st.info(f"Mapas seleccionados: {', '.join(selected_maps)}")
+    st.info(f"Mapas seleccionados para la simulación: {', '.join(selected_maps)}")
 
 st.divider()
 
 # -------------------------------
 # FUNCIONES
 # -------------------------------
+
 def predict_map(team1, team2, selected_map):
 
     t1 = team_stats[team_stats["team"] == team1].iloc[0]
@@ -133,20 +142,16 @@ def predict_map(team1, team2, selected_map):
         "team2_avg_rating": t2["avg_rating"],
         "rating_diff": t1["avg_rating"] - t2["avg_rating"],
         "kills_diff": t1["avg_kills"] - t2["avg_kills"],
-        "rank_diff": t2["rank"] - t1["rank"]
+        "rank_diff": t2["rank"] - t1["rank"],
     }
+
 
     X_input = pd.DataFrame([input_data])
 
-    for col in feature_columns:
-        if col.startswith("_map_"):
-            X_input[col] = 0
-
     map_col = f"_map_{selected_map}"
-    if map_col in X_input.columns:
-        X_input[map_col] = 1
+    X_input[map_col] = 1
 
-    X_input = X_input[feature_columns]
+    X_input = X_input.reindex(columns=feature_columns, fill_value=0)
 
     proba = model.predict_proba(X_input)[0]
 
@@ -154,7 +159,6 @@ def predict_map(team1, team2, selected_map):
         "team1_prob": float(proba[0]),
         "team2_prob": float(proba[1])
     }
-
 
 def simulate_series(team1, team2, maps):
 
@@ -202,11 +206,11 @@ def simulate_series(team1, team2, maps):
 if st.button("🎯 Ejecutar simulación"):
 
     if len(selected_maps) != num_maps:
-        st.warning("Selecciona el número correcto de mapas")
+        st.warning(f"Debes seleccionar exactamente {num_maps} mapas para este formato")
     else:
         result = simulate_series(team1, team2, selected_maps)
 
-        st.subheader("Resultados por mapa")
+        st.subheader("Resultados por mapa (probabilidad de victoria en cada uno)")
 
         df = pd.DataFrame(result["maps"])
 
@@ -217,7 +221,7 @@ if st.button("🎯 Ejecutar simulación"):
             "Ganador": df["winner"]
         })
 
-        # COLORES 
+        # COLORES
         def style_probs(val):
             if isinstance(val, float):
                 if val > 0.5:
@@ -243,7 +247,7 @@ if st.button("🎯 Ejecutar simulación"):
         # -----------------------
         # RESULTADO FINAL
         # -----------------------
-        st.subheader("Resultado del enfrentamiento")
+        st.subheader("Resultado final del enfrentamiento (mapas ganados)")
 
         col1, col2, col3 = st.columns([1,1,1])
 
@@ -262,7 +266,7 @@ if st.button("🎯 Ejecutar simulación"):
         # -----------------------
         # PROBABILIDADES
         # -----------------------
-        st.subheader("Probabilidad del enfrentamiento")
+        st.subheader("Probabilidad global de victoria")
 
         st.write(f"{team1} ({result['team1_series_prob']:.2%})")
         st.progress(result["team1_series_prob"])
